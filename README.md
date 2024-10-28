@@ -14,7 +14,7 @@
 ### OS
 - Mac OS 15(Sequoia)
 - On Mac OS Sequoia, you must run the program with sudo to upload code due to security reasons
-```sudo /Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE```
+- ```sudo /Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE```
 ### ST Link
 - ST Link V2 mini
 - https://ko.aliexpress.com/item/1005005273159580.html?spm=a2g0o.order_list.order_list_main.16.7300140fI6Ym7H&gatewayAdapt=glo2kor
