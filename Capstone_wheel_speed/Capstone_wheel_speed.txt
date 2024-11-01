@@ -1,0 +1,60 @@
+Configuration	Capstone_wheel_speed
+STM32CubeMX 	6.12.1
+Date	10/23/2024
+MCU	STM32G030F6Px
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+SYS	Serial Wire	SYS_SWCLK	PA14-BOOT0
+SYS	Serial Wire	SYS_SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+1	PB7*	USART1_RX	
+18	PA13	SYS_SWDIO	
+19	PA14-BOOT0	SYS_SWCLK	
+20	PB6*	USART1_TX	
+PERIPHERALS	MODES	FUNCTIONS	PINS
+SYS	Serial Wire	SYS_SWCLK	PA14-BOOT0
+SYS	Serial Wire	SYS_SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Internal Clock	TIM1_VS_ClockSourceINT	VP_TIM1_VS_ClockSourceINT
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+1	PB7*	USART1_RX	
+18	PA13	SYS_SWDIO	
+19	PA14-BOOT0	SYS_SWCLK	
+20	PB6*	USART1_TX	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : Capstone_wheel_speed
+Project Folder : /Users/nabi/STM32CubeIDE/workspace_1.16.1/Capstone_wheel_speed
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_G0 V1.6.2
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
