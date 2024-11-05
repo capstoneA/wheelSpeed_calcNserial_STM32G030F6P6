@@ -1,5 +1,6 @@
-# wheelSpeed_calcNserial_STM32
+# wheelSpeed_calcNserial_STM32G030F6P6
 ### 신경망 target value 취득을 위한 보행 보조기의 바퀴 회전 속도를 통한 보행기 속도를 Serial로 전송하기 위한 STM32보드 Uploading code
+### Uploading Code to STM32 Board for Transmitting Walker Speed via Serial Communication Using Wheel Rotation Speed of a Gait Assist Device to Obtain Target Value for Neural Network
 
 ## Target Board
 ### STM32G030F6P6
