@@ -57,8 +57,22 @@ static void MX_TIM1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+#define PCVUIP *(volatile unsigned int*)
+
+#define FRQ 1
+
 unsigned int led_check = 0;
 unsigned char speed = 0;
+
+void ledDebug(){
+	led_check^=1;
+	if(led_check){
+		PCVUIP(0x50000018) = 0x01<<(16+4);
+	}
+	if(!led_check){
+		PCVUIP(0x50000018) = 0x01<<(4);
+	}
+}
 
 unsigned int queue[20] = {0};
 int queue_front = 0;
@@ -85,174 +99,163 @@ void enqueue(unsigned int v){
 	return;
 }
 
+void PA4debugLEDsetting(){
+	PCVUIP(0x40021034) |=  (0x01)<<0;			//PA Clock Enable
+	PCVUIP(0x50000000) |=  (0x01)<<(4*2);	//MODER
+	PCVUIP(0x50000000) &= ~(0x02)<<(4*2);	//MODER
+	PCVUIP(0x50000008) |=  (0x03)<<(4*2);	//speed - very fast
+	PCVUIP(0x5000000C) &= ~(0x03)<<(4*2);	//pupd - not
+}
+
 void timer1setting(){
-	 *(volatile unsigned int*)(0x40021040) |= 0x01<<11;	//RCC
+	PCVUIP(0x40021040) |=  (0x01<<11);	//RCC
 
-	 *(volatile unsigned int*)(0x40012C0C) |= 0x01<<0;	//DIER->UIE
-	 *(volatile unsigned int*)(0x40012C10) &= ~(0x01<<0);	//SR - UIF
+	PCVUIP(0x40012C0C) |=  (0x01<<0);	//DIER->UIE
+	PCVUIP(0x40012C10) &= ~(0x01<<0);	//SR - UIF
 
-//	 *(volatile unsigned int*)(0x40012C24);	//CNT
-	 *(volatile unsigned int*)(0x40012C28) = 63;	//Prescaler
-//	 *(volatile unsigned int*)(0x40012C2C);	//ARR
+//	PCVUIP(0x40012C24);	//CNT
+	PCVUIP(0x40012C28)  = 63;	//Prescaler
+//	PCVUIP(0x40012C2C);	//ARR
 
-	 *(volatile unsigned int*)(0x40012C00) |= 0x01<<0;	//counter enable
+	PCVUIP(0x40012C00) |= 0x01<<0;	//counter enable
 
-	 *(volatile unsigned int*)(0xE000E100) |= 0x01<<13;	//NVIC enable
+	PCVUIP(0xE000E100) |= 0x01<<13;	//NVIC enable
 }
 
 void TIM1_BRK_UP_TRG_COM_IRQHandler(){
-	if(*(volatile unsigned int*)(0x40012C10) & (0x01<<0)){
-		*(volatile unsigned int*)(0x40012C10) &= ~(0x01<<0);	//SR - UIF
-
-//		*(volatile unsigned int*)(0x40013828) = 97;
+	if(PCVUIP(0x40012C10) & (0x01<<0)){
+		PCVUIP(0x40012C10) &= ~(0x01<<0);	//SR - UIF
 
 		speed = 0;
-		*(volatile unsigned int*)(0x40013828) = speed;
+//		PCVUIP(0x40013828) = speed;
 
-		led_check^=1;
-		if(led_check){
-		  *(volatile unsigned int*)(0x50000018) = 0x01<<(16+4);
-		}
-		if(!led_check){
-		  *(volatile unsigned int*)(0x50000018) = 0x01<<(4);
-		}
+		ledDebug();
+	}
+}
+
+void timer3setting(){
+	PCVUIP(0x4002103C) |= (0x01<<1);
+
+	PCVUIP(0x4000040C) |=  (0x01)<<0;	//DIER->UIE
+	PCVUIP(0x40000410) &= ~(0x01<<0);	//SR - UIF
+
+	PCVUIP(0x40000428) = (1000 - 1);	//prescaler
+	PCVUIP(0x4000042C) = (16000/FRQ - 1);	//Auto reload
+
+	PCVUIP(0x40000400) |= (0x01)<<0;	//counter enable
+
+	PCVUIP(0xE000E100) |= 0x01<<16;	//NVIC enable
+}
+
+void TIM3_IRQHandler(){
+	if(PCVUIP(0x40000410) & (0x01<<0)){
+		PCVUIP(0x40000410) &= ~(0x01<<0);
+
+		PCVUIP(0x40013828) = speed;	//UART TX
 	}
 }
 
 void PA8inputSetting(){
-	*(volatile unsigned int*)(0x40021034) |= 0x01<<0;			//clock enable
-	*(volatile unsigned int*)(0x50000000) &= ~(0x03<<(8*2));	//input
-    *(volatile unsigned int*)(0x5000000C) &= ~(0x03<<(8*2));	//pupd - not
-    *(volatile unsigned int*)(0x50000008) |= 0x03<<(8*2);		//speed very fast
+	PCVUIP(0x40021034) |=  (0x01<<0);			//clock enable
+	PCVUIP(0x50000000) &= ~(0x03<<(8*2));	//input
+	PCVUIP(0x5000000C) &= ~(0x03<<(8*2));	//pupd - not
+	PCVUIP(0x50000008) |=  (0x03<<(8*2));		//speed very fast
 }
 
 void EXTI8setting(){
-	*(volatile unsigned int*)(0x40021800) |= 0x01<<8;	//rising edge trigger
-	*(volatile unsigned int*)(0x40021868) &= ~(0xF<<0);	//use PA8
+	PCVUIP(0x40021800) |=   0x01<<8;	//rising edge trigger
+	PCVUIP(0x40021868) &= ~(0xF<<0);	//use PA8
 
-	*(volatile unsigned int*)(0x40021880) |= 0x01<<8;	//IMR
+	PCVUIP(0x40021880) |=  0x01<<8;	//IMR
 
-	*(volatile unsigned int*)(0xE000E100) |= 0x01<<7;	//EXTI set enable reg
+	PCVUIP(0xE000E100) |=  0x01<<7;	//EXTI set enable reg
 }
 
 void EXTI4_15_IRQHandler(){
-	if(*(volatile unsigned int*)(0x4002180C) & (0x01<<8)){
+	if(PCVUIP(0x4002180C) & (0x01<<8)){
 
-//		enqueue(*(volatile unsigned int*)(0x40012C24));
-//		*(volatile unsigned int*)(0x40012C24) = 0x00;
+		PCVUIP(0x4002180C) |= 0x01<<8;
 
-		*(volatile unsigned int*)(0x4002180C) |= 0x01<<8;
+		unsigned int cnt = PCVUIP(0x40012C24) & 0xFFFF;
+		PCVUIP(0x40012C24) = 0x00;	//copy CNT value and reset
+		speed = (unsigned char)(762500/cnt);
+//		PCVUIP(0x40013828) = speed;
 
-//		*(volatile unsigned int*)(0x40013828) = 97;
-
-		unsigned int cnt = *(volatile unsigned int*)(0x40012C24) & 0xFFFF;
-		*(volatile unsigned int*)(0x40012C24) = 0x00;
-		speed = (unsigned char)(190625/cnt);
-		if(speed){
-				//speed update when last speed is not 0
-			*(volatile unsigned int*)(0x40013828) = speed;
-		}
-
-		led_check^=1;
-		if(led_check){
-		  *(volatile unsigned int*)(0x50000018) = 0x01<<(16+4);
-		}
-		if(!led_check){
-		  *(volatile unsigned int*)(0x50000018) = 0x01<<(4);
-		}
+		ledDebug();
 	}
 }
 
 void UART1Setting(){
-	*(volatile unsigned int*)(0x40021040) |= 0x01<<14;	//RCC uart1 enable
-	*(volatile unsigned int*)(0x40021034) |= 0x01<<1;	//RCC GPIOB clock enable
+	PCVUIP(0x40021040) |=  0x01<<14;	//RCC uart1 enable
+	PCVUIP(0x40021034) |=  0x01<<1;	//RCC GPIOB clock enable
 
-	*(volatile unsigned int*)(0x50000400) |= 0x02<<(6*2);	//MODER
-	*(volatile unsigned int*)(0x50000400) &= ~(0x01<<(6*2));	//MODER
-	*(volatile unsigned int*)(0x50000400) |= 0x02<<(7*2);	//MODER
-	*(volatile unsigned int*)(0x50000400) &= ~(0x01<<(7*2));	//MODER
+	PCVUIP(0x50000400) |=  (0x02<<(6*2));	//MODER
+	PCVUIP(0x50000400) &= ~(0x01<<(6*2));	//MODER
+	PCVUIP(0x50000400) |=  (0x02<<(7*2));	//MODER
+	PCVUIP(0x50000400) &= ~(0x01<<(7*2));	//MODER
 
-	*(volatile unsigned int*)(0x50000420) &= ~(0x0F<<(7*4));	//AFRL
-	*(volatile unsigned int*)(0x50000420) &= ~(0x0F<<(6*4));	//AFRL
+	PCVUIP(0x50000420) &= ~(0x0F<<(7*4));	//AFRL
+	PCVUIP(0x50000420) &= ~(0x0F<<(6*4));	//AFRL
 
-	*(volatile unsigned int*)(0x4001380C) = 1667;	//baud rate : 16000000/9600
-	*(volatile unsigned int*)(0x40013800) |= 0x01<<0;	//UART Enable
-	*(volatile unsigned int*)(0x40013800) |= 0x01<<3;	//UART Transmitter Enable
+	PCVUIP(0x4001380C)  =  1667;	//baud rate : 16000000/9600
+	PCVUIP(0x40013800) |=  0x01<<0;	//UART Enable
+	PCVUIP(0x40013800) |=  0x01<<3;	//UART Transmitter Enable
 }
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
+  * @brief  The application entry point.‹
   * @retval int
   */
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_TIM1_Init();
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_TIM1_Init();
 
-  //190625
-  /* USER CODE BEGIN 2 */
+	//190625
+	//762500
+	/* USER CODE BEGIN 2 */
 
-  *(volatile unsigned int*)(0x40021034) |= 0x01<<0;			//PA Clock Enable
-  *(volatile unsigned int*)(0x50000000) |= (0x01)<<(4*2);	//MODER
-  *(volatile unsigned int*)(0x50000000) &= ~(0x02)<<(4*2);	//MODER
-  *(volatile unsigned int*)(0x50000008) |= (0x03)<<(4*2);	//speed - very fast
-  *(volatile unsigned int*)(0x5000000C) &= ~(0x03)<<(4*2);	//pupd - not
+	/* USER CODE END 2 */
 
-  /* USER CODE END 2 */
+	PA4debugLEDsetting();
+	PA8inputSetting();
+	EXTI8setting();
+	timer1setting();
+	timer3setting();
+	UART1Setting();
 
-  PA8inputSetting();
-  EXTI8setting();
-  timer1setting();
-  UART1Setting();
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1)
+	{
+	/* USER CODE END WHILE */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  ;
-    /* USER CODE END WHILE */
-//	  *(volatile unsigned int*)(0x50000018) = 0x01<<(16+4);
-//	  for(volatile unsigned int i=0;i<100000;i++);
-//	  *(volatile unsigned int*)(0x50000018) = 0x01<<(4);
-//	  for(volatile unsigned int i=0;i<100000;i++);
-
-//	  if(*(volatile unsigned int*)(0x50000010) & 0x0100){
-//		 *(volatile unsigned int*)(0x50000018) = 0x01<<(4);
-//	  }
-//	  else{
-//		  *(volatile unsigned int*)(0x50000018) = 0x01<<(16+4);
-//	  }
-
-//	  int index = queue_front;
-//	  unsigned int timing = queue[index];
-//	  unsigned int mps = n/timing;
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+	/* USER CODE BEGIN 3 */
+	}
+	/* USER CODE END 3 */
 }
 
 /**
